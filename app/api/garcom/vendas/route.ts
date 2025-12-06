@@ -14,38 +14,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
-    const hoje = new Date();
-    const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
-    const fimHoje = new Date(hoje.setHours(23, 59, 59, 999));
+    const agora = new Date();
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0, 0);
+    const fimHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59, 999);
 
-    const inicioSemana = new Date();
-    inicioSemana.setDate(inicioSemana.getDate() - 7);
+    const inicioSemana = new Date(agora);
+    inicioSemana.setDate(agora.getDate() - 7);
     inicioSemana.setHours(0, 0, 0, 0);
 
-    const inicioMes = new Date();
-    inicioMes.setDate(1);
-    inicioMes.setHours(0, 0, 0, 0);
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0, 0);
 
-    // Vendas hoje
+    // Vendas hoje (apenas pedidos fechados)
     const pedidosHoje = await prisma.pedido.findMany({
       where: {
         garcomId: decoded.userId,
+        status: 'fechado',
         criadoEm: { gte: inicioHoje, lte: fimHoje },
       },
     });
 
-    // Vendas semana
+    // Vendas semana (apenas pedidos fechados)
     const pedidosSemana = await prisma.pedido.findMany({
       where: {
         garcomId: decoded.userId,
+        status: 'fechado',
         criadoEm: { gte: inicioSemana },
       },
     });
 
-    // Vendas mês
+    // Vendas mês (apenas pedidos fechados)
     const pedidosMes = await prisma.pedido.findMany({
       where: {
         garcomId: decoded.userId,
+        status: 'fechado',
         criadoEm: { gte: inicioMes },
       },
     });
@@ -53,21 +54,28 @@ export async function GET(request: NextRequest) {
     // Histórico últimos 7 dias
     const historico = [];
     for (let i = 6; i >= 0; i--) {
-      const dia = new Date();
-      dia.setDate(dia.getDate() - i);
-      const inicioDia = new Date(dia.setHours(0, 0, 0, 0));
-      const fimDia = new Date(dia.setHours(23, 59, 59, 999));
+      const diaAtual = new Date();
+      diaAtual.setDate(diaAtual.getDate() - i);
+      const inicioDia = new Date(diaAtual.getFullYear(), diaAtual.getMonth(), diaAtual.getDate(), 0, 0, 0, 0);
+      const fimDia = new Date(diaAtual.getFullYear(), diaAtual.getMonth(), diaAtual.getDate(), 23, 59, 59, 999);
 
       const pedidosDia = await prisma.pedido.findMany({
         where: {
           garcomId: decoded.userId,
+          status: 'fechado',
           criadoEm: { gte: inicioDia, lte: fimDia },
         },
       });
 
       const total = pedidosDia.reduce((acc: number, p: any) => acc + Number(p.total), 0);
+      
+      // Formatar data corretamente
+      const dataFormatada = new Date(inicioDia.getTime() - inicioDia.getTimezoneOffset() * 60000)
+        .toISOString()
+        .split('T')[0];
+      
       historico.push({
-        data: inicioDia.toISOString().split('T')[0],
+        data: dataFormatada,
         total,
         pedidos: pedidosDia.length,
       });

@@ -119,27 +119,43 @@ export default function GarcomVendas() {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.historico.length > 0 ? (
-              data.historico.map((item) => (
-                <div
-                  key={item.data}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'short',
-                      })}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.pedidos} pedido{item.pedidos !== 1 ? 's' : ''}
+              data.historico.map((item) => {
+                const [ano, mes, dia] = item.data.split('-');
+                const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                const ontem = new Date(hoje);
+                ontem.setDate(ontem.getDate() - 1);
+                
+                let dataLabel = '';
+                if (dataObj.getTime() === hoje.getTime()) {
+                  dataLabel = 'Hoje';
+                } else if (dataObj.getTime() === ontem.getTime()) {
+                  dataLabel = 'Ontem';
+                } else {
+                  dataLabel = dataObj.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'short',
+                  });
+                }
+
+                return (
+                  <div
+                    key={item.data}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{dataLabel}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.pedidos} pedido{item.pedidos !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <p className="text-lg font-bold text-green-600">
+                      R$ {Number(item.total).toFixed(2)}
                     </p>
                   </div>
-                  <p className="text-lg font-bold text-green-600">
-                    R$ {Number(item.total).toFixed(2)}
-                  </p>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-center text-gray-500 py-4">
                 Nenhuma venda registrada ainda
