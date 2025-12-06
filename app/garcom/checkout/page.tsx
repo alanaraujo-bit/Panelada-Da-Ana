@@ -106,6 +106,10 @@ function CheckoutContent() {
               <span className="font-semibold">{pedido.mesa.nome}</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-muted-foreground">Aberto por:</span>
+              <span className="font-semibold">{pedido.garcom?.nome || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-muted-foreground">Itens:</span>
               <span className="font-semibold">{pedido.itens.length}</span>
             </div>
