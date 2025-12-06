@@ -230,7 +230,7 @@ export default function MesaPage() {
   const qtdItensCarrinho = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-gray-50 pb-48">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-orange to-primary-brown text-white p-4 sticky top-0 z-20 shadow-lg">
         <div className="max-w-lg mx-auto">
@@ -537,8 +537,8 @@ export default function MesaPage() {
 
       {/* Footer Fixo com Total */}
       {pedido.itens.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-10">
-          <div className="max-w-lg mx-auto p-4 space-y-3">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-30">
+          <div className="max-w-lg mx-auto p-4 space-y-3 pb-6">
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -551,9 +551,10 @@ export default function MesaPage() {
             
             <Button
               onClick={handleFecharPedido}
-              className="w-full h-14 text-lg bg-green-600 hover:bg-green-700 font-bold"
+              className="w-full h-16 text-xl bg-red-600 hover:bg-red-700 font-bold shadow-xl flex items-center justify-center gap-2"
             >
-              Fechar Conta
+              <Check className="h-6 w-6" />
+              Fechar Conta e Pagar
             </Button>
           </div>
         </div>
