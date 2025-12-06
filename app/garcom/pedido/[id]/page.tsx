@@ -202,25 +202,8 @@ export default function MesaPage() {
     }
   };
 
-  const handleFecharPedido = async () => {
-    if (!confirm(`Fechar conta de R$ ${Number(pedido?.total).toFixed(2)}?`)) return;
-
-    try {
-      await fetch(`/api/pedidos/${params.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: 'fechado' }),
-      });
-      
-      alert('Pedido fechado com sucesso!');
-      router.push('/garcom/mesas');
-    } catch (error) {
-      console.error('Erro ao fechar pedido:', error);
-      alert('Erro ao fechar pedido');
-    }
+  const handleFecharPedido = () => {
+    router.push(`/garcom/checkout?pedidoId=${params.id}`);
   };
 
   if (loading) {
