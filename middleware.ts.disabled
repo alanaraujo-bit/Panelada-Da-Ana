@@ -1,0 +1,52 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
+
+export default function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Rotas públicas
+  if (pathname === '/login' || pathname === '/') {
+    return NextResponse.next();
+  }
+
+  // Verificar token
+  const token = request.cookies.get('token')?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  try {
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('token');
+      return response;
+    }
+    
+    // Verificar permissões baseadas em role
+    if (pathname.startsWith('/admin') && decoded.role !== 'admin') {
+      return NextResponse.redirect(new URL('/garcom/mesas', request.url));
+    }
+
+    if (pathname.startsWith('/garcom') && decoded.role === 'admin') {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    // Token inválido
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('token');
+    return response;
+  }
+}
+
+export const config = {
+  matcher: [
+    '/admin/:path*',
+    '/garcom/:path*',
+  ],
+};

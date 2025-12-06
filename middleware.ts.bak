@@ -1,0 +1,43 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Rotas públicas
+  if (pathname === '/login' || pathname === '/' || pathname.startsWith('/api/auth/login')) {
+    return NextResponse.next();
+  }
+
+  // Verificar token
+  const token = request.cookies.get('token')?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  const payload = verifyToken(token);
+
+  if (!payload) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Proteção de rotas admin
+  if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+    return NextResponse.redirect(new URL('/garcom', request.url));
+  }
+
+  // Proteção de rotas garçom
+  if (pathname.startsWith('/garcom') && payload.role !== 'garcom') {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|icon).*)',
+  ],
+};

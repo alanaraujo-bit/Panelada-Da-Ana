@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: "Geist", var(--font-family-sans);
+  --font-family-mono: "Geist Mono", var(--font-family-mono);
+  
+  /* Cores Panelada da Ana */
+  --color-primary-orange: #A44F1C;
+  --color-primary-brown: #6A3A1A;
+  --color-primary-cream: #F3E4CE;
+  
+  /* Cores do Sistema */
+  --color-background: #ffffff;
+  --color-foreground: #1a1410;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1410;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1a1410;
+  --color-primary: #A44F1C;
+  --color-primary-foreground: #faf8f5;
+  --color-secondary: #f3e4ce;
+  --color-secondary-foreground: #2a1a10;
+  --color-muted: #f9f3ec;
+  --color-muted-foreground: #72665b;
+  --color-accent: #f3e4ce;
+  --color-accent-foreground: #2a1a10;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #faf8f5;
+  --color-border: #e5d4be;
+  --color-input: #e5d4be;
+  --color-ring: #A44F1C;
+  
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Utilities adicionais */
+.text-balance {
+  text-wrap: balance;
+}
