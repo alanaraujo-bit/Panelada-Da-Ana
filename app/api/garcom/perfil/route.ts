@@ -16,7 +16,14 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, nome: true, email: true },
+      select: { 
+        id: true, 
+        nome: true, 
+        email: true, 
+        telefone: true, 
+        foto: true,
+        role: true 
+      },
     });
 
     return NextResponse.json(user);
@@ -42,12 +49,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nome } = body;
+    const { nome, foto, telefone } = body;
+
+    const updateData: any = {};
+    if (nome !== undefined) updateData.nome = nome;
+    if (foto !== undefined) updateData.foto = foto;
+    if (telefone !== undefined) updateData.telefone = telefone;
 
     const user = await prisma.user.update({
       where: { id: decoded.userId },
-      data: { nome },
-      select: { id: true, nome: true, email: true },
+      data: updateData,
+      select: { 
+        id: true, 
+        nome: true, 
+        email: true, 
+        telefone: true, 
+        foto: true,
+        role: true 
+      },
     });
 
     return NextResponse.json(user);

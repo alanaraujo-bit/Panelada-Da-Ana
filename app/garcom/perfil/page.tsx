@@ -11,10 +11,12 @@ import { Camera, Mail, Phone, Calendar, LogOut } from 'lucide-react';
 
 export default function GarcomPerfil() {
   const router = useRouter();
-  const { user, token, logout } = useAuthStore();
+  const { user, token, logout, setAuth } = useAuthStore();
   const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [foto, setFoto] = useState('');
   const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     if (!token || !user) {
@@ -22,19 +24,22 @@ export default function GarcomPerfil() {
       return;
     }
     setNome(user.nome);
-    // Carregar dados adicionais do perfil
     fetchPerfil();
   }, [token, user]);
 
   const fetchPerfil = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/garcom/perfil', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       setFoto(data.foto || '');
+      setTelefone(data.telefone || '');
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,7 +62,7 @@ export default function GarcomPerfil() {
   };
 
   const handleSalvar = async () => {
-    setLoading(true);
+    setSalvando(true);
     try {
       const response = await fetch('/api/garcom/perfil', {
         method: 'PUT',
@@ -65,19 +70,23 @@ export default function GarcomPerfil() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ nome, foto }),
+        body: JSON.stringify({ nome, foto, telefone }),
       });
 
       if (response.ok) {
-        alert('Perfil atualizado com sucesso!');
+        const data = await response.json();
+        // Atualizar o user no Zustand
+        setAuth({ ...user!, nome: data.nome }, token!);
+        alert('✅ Perfil atualizado com sucesso!');
       } else {
-        alert('Erro ao atualizar perfil');
+        const error = await response.json();
+        alert('❌ ' + (error.error || 'Erro ao atualizar perfil'));
       }
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
-      alert('Erro ao salvar perfil');
+      alert('❌ Erro ao salvar perfil');
     } finally {
-      setLoading(false);
+      setSalvando(false);
     }
   };
 
@@ -164,6 +173,20 @@ export default function GarcomPerfil() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                <Input
+                  id="telefone"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  className="h-12 pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Função</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -177,10 +200,10 @@ export default function GarcomPerfil() {
 
             <Button
               onClick={handleSalvar}
-              disabled={loading}
+              disabled={salvando || loading}
               className="w-full h-12 text-base"
             >
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
+              {salvando ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </CardContent>
         </Card>
