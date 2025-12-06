@@ -15,6 +15,8 @@ import {
   Filter,
   FileSpreadsheet
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ConfiguracoesPage() {
   const { token } = useAuthStore();
@@ -33,33 +35,304 @@ export default function ConfiguracoesPage() {
   const handleGerarRelatorio = async () => {
     setLoading(true);
     try {
+      // Buscar dados da API
       const params = new URLSearchParams();
       if (dataInicio) params.append('dataInicio', dataInicio);
       if (dataFim) params.append('dataFim', dataFim);
       params.append('tipo', relatorioTipo);
-      params.append('detalhes', incluirDetalhes.toString());
 
-      const response = await fetch(`/api/relatorios/pdf?${params.toString()}`, {
+      const response = await fetch(`/api/relatorios/dados?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `relatorio-${relatorioTipo}-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        alert('Relatório gerado com sucesso!');
-      } else {
-        alert('Erro ao gerar relatório');
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados');
       }
+
+      const dados = await response.json();
+
+      // Gerar PDF bonito
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Cores do tema
+      const corPrimaria: [number, number, number] = [164, 79, 28]; // #A44F1C - laranja
+      const corSecundaria: [number, number, number] = [106, 58, 26]; // #6A3A1A - marrom
+      const corCrema: [number, number, number] = [243, 228, 206]; // #F3E4CE
+
+      // ===== CABEÇALHO =====
+      // Fundo laranja
+      doc.setFillColor(...corPrimaria);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+
+      // Logo/Título
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.text('🍲 Panelada da Ana', pageWidth / 2, 15, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Relatório Gerencial Detalhado', pageWidth / 2, 25, { align: 'center' });
+
+      // ===== INFORMAÇÕES DO RELATÓRIO =====
+      let yPos = 45;
+      
+      // Box de informações
+      doc.setFillColor(...corCrema);
+      doc.roundedRect(15, yPos, pageWidth - 30, 35, 3, 3, 'F');
+      
+      doc.setTextColor(...corSecundaria);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      yPos += 8;
+      doc.text('Tipo:', 20, yPos);
+      doc.setFont('helvetica', 'normal');
+      const tipoTexto = relatorioTipo === 'completo' ? 'Relatório Completo' :
+        relatorioTipo === 'vendas' ? 'Relatório de Vendas' :
+        relatorioTipo === 'produtos' ? 'Produtos Mais Vendidos' :
+        relatorioTipo === 'garcons' ? 'Performance dos Garçons' : 'Uso de Mesas';
+      doc.text(tipoTexto, 40, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Período:', 20, yPos);
+      doc.setFont('helvetica', 'normal');
+      const periodoTexto = dataInicio && dataFim
+        ? `${new Date(dataInicio).toLocaleDateString('pt-BR')} até ${new Date(dataFim).toLocaleDateString('pt-BR')}`
+        : 'Todo o período';
+      doc.text(periodoTexto, 40, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Gerado em:', 20, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(new Date().toLocaleString('pt-BR'), 40, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total de registros:', 20, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(dados.totalRegistros?.toString() || '0', 40, yPos);
+
+      // ===== RESUMO EXECUTIVO =====
+      yPos += 20;
+      doc.setFillColor(...corPrimaria);
+      doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('📊 Resumo Executivo', 20, yPos + 2);
+
+      yPos += 15;
+      doc.setTextColor(...corSecundaria);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+
+      // Grid de estatísticas
+      const stats = [
+        { label: 'Total de Pedidos', valor: dados.totalPedidos || 0 },
+        { label: 'Pedidos Fechados', valor: dados.pedidosFechados || 0 },
+        { label: 'Pedidos Abertos', valor: dados.pedidosAbertos || 0 },
+        { label: 'Total em Vendas', valor: `R$ ${(dados.totalVendas || 0).toFixed(2).replace('.', ',')}`, destaque: true },
+        { label: 'Ticket Médio', valor: `R$ ${(dados.ticketMedio || 0).toFixed(2).replace('.', ',')}` },
+        { label: 'Itens Vendidos', valor: dados.totalItens || 0 },
+      ];
+
+      let col = 0;
+      stats.forEach((stat, index) => {
+        const xPos = 20 + (col * 90);
+        
+        if (stat.destaque) {
+          doc.setFillColor(34, 197, 94); // Verde
+          doc.roundedRect(xPos - 2, yPos - 2, 85, 12, 2, 2, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+        } else {
+          doc.setTextColor(...corSecundaria);
+          doc.setFont('helvetica', 'normal');
+        }
+
+        doc.setFontSize(8);
+        doc.text(stat.label, xPos, yPos + 2);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(stat.valor.toString(), xPos, yPos + 8);
+
+        col++;
+        if (col >= 2) {
+          col = 0;
+          yPos += 18;
+        }
+      });
+
+      if (col !== 0) yPos += 18;
+
+      // ===== TABELA DE DADOS =====
+      yPos += 10;
+
+      if (relatorioTipo === 'completo' || relatorioTipo === 'vendas') {
+        // Tabela de Pedidos
+        doc.setFillColor(...corPrimaria);
+        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('📋 Detalhamento de Pedidos', 20, yPos + 2);
+
+        yPos += 12;
+
+        const pedidosData = dados.pedidos?.slice(0, 30).map((p: any) => [
+          `#${p.id}`,
+          p.mesa,
+          p.garcom,
+          p.status === 'aberto' ? '🟢 Aberto' : '✅ Fechado',
+          `R$ ${p.total.toFixed(2).replace('.', ',')}`,
+          new Date(p.data).toLocaleDateString('pt-BR'),
+        ]) || [];
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['ID', 'Mesa', 'Garçom', 'Status', 'Total', 'Data']],
+          body: pedidosData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: corSecundaria,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center',
+          },
+          bodyStyles: {
+            textColor: [50, 50, 50],
+          },
+          alternateRowStyles: {
+            fillColor: [250, 245, 235],
+          },
+          columnStyles: {
+            0: { cellWidth: 20, halign: 'center' },
+            1: { cellWidth: 30 },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 30, halign: 'center' },
+            4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+            5: { cellWidth: 30, halign: 'center' },
+          },
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 10;
+      }
+
+      if (relatorioTipo === 'produtos') {
+        // Tabela de Produtos
+        doc.setFillColor(...corPrimaria);
+        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🏆 Ranking de Produtos', 20, yPos + 2);
+
+        yPos += 12;
+
+        const produtosData = dados.produtos?.map((p: any, index: number) => [
+          `${index + 1}º`,
+          p.nome,
+          p.quantidade,
+          `R$ ${p.total.toFixed(2).replace('.', ',')}`,
+          `R$ ${p.precoMedio.toFixed(2).replace('.', ',')}`,
+        ]) || [];
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Pos.', 'Produto', 'Qtd', 'Total', 'Preço Médio']],
+          body: produtosData,
+          theme: 'striped',
+          headStyles: {
+            fillColor: corSecundaria,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+          },
+          bodyStyles: {
+            textColor: [50, 50, 50],
+          },
+          alternateRowStyles: {
+            fillColor: [250, 245, 235],
+          },
+          columnStyles: {
+            0: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 25, halign: 'center' },
+            3: { cellWidth: 35, halign: 'right', fontStyle: 'bold', textColor: [34, 197, 94] },
+            4: { cellWidth: 35, halign: 'right' },
+          },
+        });
+      }
+
+      if (relatorioTipo === 'garcons') {
+        // Tabela de Garçons
+        doc.setFillColor(...corPrimaria);
+        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('👨‍🍳 Performance dos Garçons', 20, yPos + 2);
+
+        yPos += 12;
+
+        const garconsData = dados.garcons?.map((g: any, index: number) => [
+          `${index + 1}º`,
+          g.nome,
+          g.pedidos,
+          `R$ ${g.total.toFixed(2).replace('.', ',')}`,
+          `R$ ${g.ticketMedio.toFixed(2).replace('.', ',')}`,
+        ]) || [];
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Pos.', 'Garçom', 'Pedidos', 'Total Vendas', 'Ticket Médio']],
+          body: garconsData,
+          theme: 'striped',
+          headStyles: {
+            fillColor: corSecundaria,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+          },
+          bodyStyles: {
+            textColor: [50, 50, 50],
+          },
+          columnStyles: {
+            0: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 30, halign: 'center' },
+            3: { cellWidth: 40, halign: 'right', fontStyle: 'bold', textColor: [34, 197, 94] },
+            4: { cellWidth: 35, halign: 'right' },
+          },
+        });
+      }
+
+      // ===== RODAPÉ =====
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFillColor(...corSecundaria);
+        doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.text(
+          `Panelada da Ana © ${new Date().getFullYear()} • Relatório confidencial • Página ${i} de ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 6,
+          { align: 'center' }
+        );
+      }
+
+      // Salvar PDF
+      doc.save(`relatorio-${relatorioTipo}-${new Date().toISOString().split('T')[0]}.pdf`);
+      alert('Relatório PDF gerado com sucesso!');
+
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao gerar relatório');
+      alert('Erro ao gerar relatório: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
