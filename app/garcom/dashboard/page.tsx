@@ -86,7 +86,7 @@ export default function GarcomDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-90">Vendas Hoje</p>
-                <h2 className="text-3xl font-bold">
+                <h2 className="currency-value currency-large font-bold">
                   {formatCurrency(Number(data.vendasHoje))}
                 </h2>
               </div>
@@ -121,7 +121,7 @@ export default function GarcomDashboard() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Ticket Médio</p>
-                  <p className="text-2xl font-bold">
+                  <p className="currency-value currency-medium font-bold">
                     {formatCurrency(Number(data.ticketMedio))}
                   </p>
                 </div>
@@ -169,7 +169,7 @@ export default function GarcomDashboard() {
                     <span className="text-2xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
                     <span className="font-medium">{mesa.nome}</span>
                   </div>
-                  <span className="text-green-600 font-bold">
+                  <span className="currency-value currency-small text-green-600 font-bold">
                     {formatCurrency(Number(mesa.total))}
                   </span>
                 </div>

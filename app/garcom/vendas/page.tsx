@@ -69,7 +69,7 @@ export default function GarcomVendas() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm opacity-90 mb-1">Hoje</p>
-                  <h2 className="text-3xl font-bold">
+                  <h2 className="currency-value currency-large font-bold">
                     {formatCurrency(Number(data.hoje.total))}
                   </h2>
                   <p className="text-sm opacity-90 mt-1">
@@ -88,7 +88,7 @@ export default function GarcomVendas() {
                   <Calendar className="h-4 w-4 text-blue-600" />
                   <p className="text-xs text-gray-500 font-medium">Esta Semana</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="currency-value currency-medium font-bold text-gray-900">
                   {formatCurrency(Number(data.semana.total))}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -103,7 +103,7 @@ export default function GarcomVendas() {
                   <TrendingUp className="h-4 w-4 text-purple-600" />
                   <p className="text-xs text-gray-500 font-medium">Este Mês</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="currency-value currency-medium font-bold text-gray-900">
                   {formatCurrency(Number(data.mes.total))}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
@@ -168,7 +168,7 @@ export default function GarcomVendas() {
                         {item.pedidos} pedido{item.pedidos !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="currency-value currency-small font-bold text-green-600">
                       {formatCurrency(Number(item.total))}
                     </p>
                   </div>

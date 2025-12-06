@@ -333,7 +333,7 @@ export default function MesaPage() {
                               {prato.descricao}
                             </p>
                           )}
-                          <p className="text-xl font-bold text-green-600 mt-2">
+                          <p className="currency-value currency-medium font-bold text-green-600 mt-2">
                             {formatCurrency(Number(prato.preco))}
                           </p>
                         </div>
@@ -428,7 +428,7 @@ export default function MesaPage() {
                           <ShoppingCart className="h-3 w-3" />
                           {qtdItensCarrinho} {qtdItensCarrinho === 1 ? 'item' : 'itens'}
                         </p>
-                        <p className="text-2xl font-bold">{formatCurrency(totalCarrinho)}</p>
+                        <p className="currency-value currency-large font-bold">{formatCurrency(totalCarrinho)}</p>
                       </div>
                       
                       <Button
@@ -484,7 +484,7 @@ export default function MesaPage() {
                             Obs: {item.observacao}
                           </p>
                         )}
-                        <p className="text-lg font-bold text-green-600 mt-1">
+                        <p className="currency-value currency-medium font-bold text-green-600 mt-1">
                           {formatCurrency(Number(item.subtotal))}
                         </p>
                       </div>
@@ -529,7 +529,7 @@ export default function MesaPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="text-white flex-1">
                 <p className="text-xs opacity-80">Total</p>
-                <p className="text-2xl font-bold">{formatCurrency(Number(pedido.total))}</p>
+                <p className="currency-value currency-large font-bold">{formatCurrency(Number(pedido.total))}</p>
               </div>
               
               <Button

@@ -49,3 +49,23 @@ body {
 .text-balance {
   text-wrap: balance;
 }
+
+/* Formatação de valores monetários */
+.currency-value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.currency-large {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+}
+
+.currency-medium {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+}
+
+.currency-small {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
