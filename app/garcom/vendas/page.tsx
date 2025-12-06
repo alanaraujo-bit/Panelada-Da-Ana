@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, ArrowUpDown } from 'lucide-react';
 
 interface VendasData {
   hoje: { total: number; pedidos: number };
@@ -18,6 +18,7 @@ export default function GarcomVendas() {
   const { token } = useAuthStore();
   const [data, setData] = useState<VendasData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ordemCrescente, setOrdemCrescente] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -115,11 +116,27 @@ export default function GarcomVendas() {
         {/* Histórico */}
         <Card className="shadow-md">
           <CardHeader>
-            <CardTitle className="text-base">📊 Últimos 7 Dias</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">📊 Últimos 7 Dias</CardTitle>
+              <button
+                onClick={() => setOrdemCrescente(!ordemCrescente)}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <ArrowUpDown className="h-3 w-3" />
+                {ordemCrescente ? 'Crescente' : 'Decrescente'}
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.historico.length > 0 ? (
-              data.historico.map((item) => {
+              [...data.historico]
+                .sort((a, b) => {
+                  if (ordemCrescente) {
+                    return new Date(a.data).getTime() - new Date(b.data).getTime();
+                  }
+                  return new Date(b.data).getTime() - new Date(a.data).getTime();
+                })
+                .map((item) => {
                 const [ano, mes, dia] = item.data.split('-');
                 const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
                 const hoje = new Date();
