@@ -47,21 +47,15 @@ export default function LoginPage() {
       setAuth(data.user, data.token);
       console.log('Auth set successfully');
 
-      // Salvar token no cookie e localStorage
-      document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      console.log('Cookie and localStorage saved');
-
-      // Marcar que acabou de fazer login
-      sessionStorage.setItem('justLoggedIn', 'true');
-
       // Redirecionar baseado no role
       const redirectUrl = data.user.role === 'admin' ? '/admin/dashboard' : '/garcom/mesas';
       console.log('Redirecting to:', redirectUrl);
       
+      // Aguardar um pouco para garantir que o localStorage foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Forçar navegação completa
-      window.location.replace(redirectUrl);
+      window.location.href = redirectUrl;
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'An unexpected error occurred');

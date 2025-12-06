@@ -16,36 +16,16 @@ interface Mesa {
 
 export default function MesasPage() {
   const router = useRouter();
-  const { user, token, logout, setAuth } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Tentar recuperar do localStorage se o store estiver vazio
     if (!token) {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      
-      if (storedToken && storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setAuth(parsedUser, storedToken);
-        } catch (e) {
-          console.error('Error parsing stored user:', e);
-          router.push('/login');
-          return;
-        }
-      } else {
-        router.push('/login');
-        return;
-      }
+      router.push('/login');
+      return;
     }
-  }, []);
-
-  useEffect(() => {
-    if (token) {
-      fetchMesas();
-    }
+    fetchMesas();
   }, [token]);
 
   const fetchMesas = async () => {
