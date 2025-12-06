@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import Link from 'next/link';
 
 interface Prato {
   id: number;
@@ -21,7 +19,6 @@ interface Prato {
 }
 
 export default function PratosAdminPage() {
-  const router = useRouter();
   const { token } = useAuthStore();
   const [pratos, setPratos] = useState<Prato[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -33,14 +30,12 @@ export default function PratosAdminPage() {
     categoria: '',
     ativo: true,
   });
+  const [loading, setLoading] = useState(true);
+  const [filtroCategoria, setFiltroCategoria] = useState('Todas');
 
   useEffect(() => {
-    if (!token) {
-      router.push('/login');
-      return;
-    }
     fetchPratos();
-  }, [token]);
+  }, []);
 
   const fetchPratos = async () => {
     try {
@@ -51,6 +46,8 @@ export default function PratosAdminPage() {
       setPratos(data);
     } catch (error) {
       console.error('Erro:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,6 +88,7 @@ export default function PratosAdminPage() {
       ativo: prato.ativo,
     });
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: number) => {
@@ -107,125 +105,256 @@ export default function PratosAdminPage() {
     }
   };
 
-  const categorias = Array.from(new Set(pratos.map((p) => p.categoria)));
+  const toggleAtivo = async (prato: Prato) => {
+    try {
+      await fetch(`/api/pratos/${prato.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...prato,
+          ativo: !prato.ativo,
+        }),
+      });
+      fetchPratos();
+    } catch (error) {
+      console.error('Erro:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingPrato(null);
+    setFormData({ nome: '', descricao: '', preco: '', categoria: '', ativo: true });
+  };
+
+  const categorias = ['Todas', ...Array.from(new Set(pratos.map((p) => p.categoria)))];
+  const pratosFiltrados = filtroCategoria === 'Todas'
+    ? pratos
+    : pratos.filter((p) => p.categoria === filtroCategoria);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-orange"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-primary-cream">
-      <div className="bg-primary-orange text-white p-4 shadow-lg">
-        <div className="flex items-center max-w-7xl mx-auto">
-          <Link href="/admin/dashboard">
-            <Button variant="ghost" size="icon" className="mr-3 text-white hover:bg-white/20">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Gerenciar Pratos</h1>
+    <div className="p-4 lg:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-primary-brown mb-1">Gerenciar Pratos</h1>
+          <p className="text-gray-600">Adicione, edite ou remova pratos do cardápio</p>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-4 space-y-4">
         {!showForm && (
-          <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-primary-orange hover:bg-primary-brown text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
             Novo Prato
           </Button>
         )}
+      </div>
 
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingPrato ? 'Editar Prato' : 'Novo Prato'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Form */}
+      {showForm && (
+        <Card className="shadow-lg border-2 border-primary-orange">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-bold text-primary-brown mb-4">
+              {editingPrato ? 'Editar Prato' : 'Novo Prato'}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Nome</Label>
+                  <Label htmlFor="nome">Nome do Prato *</Label>
                   <Input
+                    id="nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    placeholder="Ex: Feijoada"
                     required
+                    className="mt-1"
                   />
                 </div>
                 <div>
-                  <Label>Descrição</Label>
+                  <Label htmlFor="categoria">Categoria *</Label>
                   <Input
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Preço</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.preco}
-                    onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Categoria</Label>
-                  <Input
+                    id="categoria"
                     value={formData.categoria}
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                    placeholder="Ex: Pratos Principais"
+                    placeholder="Ex: Prato Principal, Bebida, Sobremesa"
                     required
+                    className="mt-1"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="ativo"
-                    checked={formData.ativo}
-                    onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                  />
-                  <Label htmlFor="ativo">Ativo</Label>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => {
-                    setShowForm(false);
-                    setEditingPrato(null);
-                    setFormData({ nome: '', descricao: '', preco: '', categoria: '', ativo: true });
-                  }}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">Salvar</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+              </div>
 
-        {categorias.map((categoria) => (
-          <div key={categoria}>
-            <h3 className="font-bold text-primary-brown mb-3 text-lg">{categoria}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {pratos
-                .filter((p) => p.categoria === categoria)
-                .map((prato) => (
-                  <Card key={prato.id} className={!prato.ativo ? 'opacity-50' : ''}>
-                    <CardHeader>
-                      <CardTitle className="text-base">{prato.nome}</CardTitle>
-                      {prato.descricao && (
-                        <p className="text-sm text-muted-foreground">{prato.descricao}</p>
-                      )}
-                      <p className="text-lg font-bold text-primary-orange">
-                        {formatCurrency(Number(prato.preco))}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(prato)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(prato.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-          </div>
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input
+                  id="descricao"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  placeholder="Descrição do prato"
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="preco">Preço (R$) *</Label>
+                  <Input
+                    id="preco"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.preco}
+                    onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                    placeholder="0.00"
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ativo">Status</Label>
+                  <select
+                    id="ativo"
+                    value={formData.ativo ? 'true' : 'false'}
+                    onChange={(e) => setFormData({ ...formData, ativo: e.target.value === 'true' })}
+                    className="w-full mt-1 px-3 py-2 border rounded-md"
+                  >
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
+                  {editingPrato ? 'Salvar Alterações' : 'Criar Prato'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="border-gray-300"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filtros */}
+      <div className="flex gap-2 flex-wrap">
+        {categorias.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setFiltroCategoria(cat)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              filtroCategoria === cat
+                ? 'bg-primary-orange text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {cat}
+          </button>
         ))}
       </div>
+
+      {/* Lista de Pratos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pratosFiltrados.map((prato) => (
+          <Card
+            key={prato.id}
+            className={`shadow-lg hover:shadow-xl transition-all border-l-4 ${
+              prato.ativo ? 'border-green-500' : 'border-gray-400 opacity-60'
+            }`}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <UtensilsCrossed className={`h-5 w-5 ${
+                      prato.ativo ? 'text-primary-orange' : 'text-gray-400'
+                    }`} />
+                    <h3 className="text-lg font-bold text-gray-900">{prato.nome}</h3>
+                  </div>
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                    {prato.categoria}
+                  </span>
+                </div>
+                <button
+                  onClick={() => toggleAtivo(prato)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    prato.ativo
+                      ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={prato.ativo ? 'Desativar' : 'Ativar'}
+                >
+                  {prato.ativo ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+
+              {prato.descricao && (
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{prato.descricao}</p>
+              )}
+
+              <div className="text-2xl font-bold text-green-600 mb-4">
+                {formatCurrency(Number(prato.preco))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleEdit(prato)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50"
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+                <Button
+                  onClick={() => handleDelete(prato.id)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {pratosFiltrados.length === 0 && (
+        <Card className="shadow-lg">
+          <CardContent className="p-12 text-center">
+            <UtensilsCrossed className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-700 mb-2">
+              {filtroCategoria === 'Todas'
+                ? 'Nenhum prato cadastrado'
+                : `Nenhum prato na categoria "${filtroCategoria}"`}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {filtroCategoria === 'Todas'
+                ? 'Clique em "Novo Prato" para adicionar o primeiro prato'
+                : 'Tente selecionar outra categoria'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

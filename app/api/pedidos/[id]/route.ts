@@ -29,9 +29,9 @@ export async function GET(
         garcom: {
           select: { id: true, nome: true },
         },
-        fechadoPor: {
-          select: { id: true, nome: true },
-        },
+        // fechadoPor: {
+        //   select: { id: true, nome: true },
+        // },
         itens: {
           include: {
             prato: true,
@@ -77,13 +77,13 @@ export async function PUT(
         data: {
           status: 'fechado',
           formaPagamento: body.formaPagamento,
-          fechadoPorId: payload.userId,
+          // fechadoPorId: payload.userId,
           finalizadoEm: new Date(),
         },
         include: { 
           mesa: true,
           garcom: { select: { id: true, nome: true } },
-          fechadoPor: { select: { id: true, nome: true } },
+          // fechadoPor: { select: { id: true, nome: true } },
         },
       });
 
