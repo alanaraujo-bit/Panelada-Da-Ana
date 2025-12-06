@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   LogOut,
   Menu,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: Table, label: 'Mesas', href: '/admin/mesas' },
     { icon: UtensilsCrossed, label: 'Pratos', href: '/admin/pratos' },
     { icon: Users, label: 'Usuários', href: '/admin/usuarios' },
+    { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
   ];
 
   if (!token || user?.role !== 'admin') {
