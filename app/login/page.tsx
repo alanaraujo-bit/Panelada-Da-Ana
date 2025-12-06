@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { token, user, setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (token && user) {
+      const redirectUrl = user.role === 'admin' ? '/admin/dashboard' : '/garcom/mesas';
+      router.push(redirectUrl);
+    }
+  }, [token, user, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (loading) return;
+    
     setLoading(true);
     setError('');
-
-    console.log('Attempting login with:', { email, senha: '***' });
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -31,35 +40,28 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log('Response status:', response.status);
-      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao fazer login');
       }
 
-      // Verificar se os dados estão corretos
       if (!data.user || !data.token) {
         throw new Error('Dados de autenticação inválidos');
       }
 
-      console.log('Setting auth...');
+      // Salvar no Zustand
       setAuth(data.user, data.token);
-      console.log('Auth set successfully');
-
-      // Redirecionar baseado no role
+      
+      // Aguardar persistência
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Redirecionar
       const redirectUrl = data.user.role === 'admin' ? '/admin/dashboard' : '/garcom/mesas';
-      console.log('Redirecting to:', redirectUrl);
+      router.push(redirectUrl);
       
-      // Aguardar um pouco para garantir que o localStorage foi atualizado
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Forçar navegação completa
-      window.location.href = redirectUrl;
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'An unexpected error occurred');
-    } finally {
+      setError(err.message || 'Erro ao realizar login');
       setLoading(false);
     }
   };
