@@ -230,7 +230,7 @@ export default function MesaPage() {
   const qtdItensCarrinho = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-48">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-orange to-primary-brown text-white p-4 sticky top-0 z-20 shadow-lg">
         <div className="max-w-lg mx-auto">
@@ -537,25 +537,22 @@ export default function MesaPage() {
 
       {/* Footer Fixo com Total */}
       {pedido.itens.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-30">
-          <div className="max-w-lg mx-auto p-4 space-y-3 pb-6">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Total do Pedido</p>
-                  <p className="text-3xl font-bold">R$ {Number(pedido.total).toFixed(2)}</p>
-                </div>
-                <DollarSign className="h-12 w-12 opacity-80" />
+        <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-r from-green-600 to-green-700 shadow-2xl z-30">
+          <div className="max-w-lg mx-auto px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-white flex-1">
+                <p className="text-xs opacity-80">Total</p>
+                <p className="text-2xl font-bold">R$ {Number(pedido.total).toFixed(2)}</p>
               </div>
+              
+              <Button
+                onClick={handleFecharPedido}
+                className="bg-white text-green-700 hover:bg-gray-100 font-bold px-6 py-6 rounded-xl shadow-lg flex items-center gap-2"
+              >
+                <Check className="h-5 w-5" />
+                Fechar Conta
+              </Button>
             </div>
-            
-            <Button
-              onClick={handleFecharPedido}
-              className="w-full h-16 text-xl bg-red-600 hover:bg-red-700 font-bold shadow-xl flex items-center justify-center gap-2"
-            >
-              <Check className="h-6 w-6" />
-              Fechar Conta e Pagar
-            </Button>
           </div>
         </div>
       )}
