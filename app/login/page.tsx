@@ -15,14 +15,20 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Aguardar hidratação do Zustand
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Redirecionar se já estiver logado
   useEffect(() => {
-    if (token && user) {
+    if (isHydrated && token && user) {
       const redirectUrl = user.role === 'admin' ? '/admin/dashboard' : '/garcom/mesas';
-      router.push(redirectUrl);
+      router.replace(redirectUrl);
     }
-  }, [token, user, router]);
+  }, [isHydrated, token, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +71,20 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (!isHydrated || (token && user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-cream to-white">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-primary-orange rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl text-white font-bold">PA</span>
+          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-orange mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-cream to-white p-4">

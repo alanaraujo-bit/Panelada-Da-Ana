@@ -19,14 +19,22 @@ export default function MesasPage() {
   const { user, token, logout } = useAuthStore();
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Aguardar hidratação
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
+    if (!isHydrated) return;
+    
     if (!token) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
     fetchMesas();
-  }, [token]);
+  }, [isHydrated, token]);
 
   const fetchMesas = async () => {
     try {
