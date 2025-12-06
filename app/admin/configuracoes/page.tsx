@@ -50,263 +50,301 @@ export default function ConfiguracoesPage() {
       }
 
       const dados = await response.json();
+      
+      console.log('Dados recebidos:', dados);      
+      console.log('Dados recebidos:', dados);
 
-      // Gerar PDF bonito
+      // Gerar PDF bonito e simples
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-
-      // Cores do tema
-      const corPrimaria: [number, number, number] = [164, 79, 28]; // #A44F1C - laranja
-      const corSecundaria: [number, number, number] = [106, 58, 26]; // #6A3A1A - marrom
-      const corCrema: [number, number, number] = [243, 228, 206]; // #F3E4CE
+      let yPos = 20;
 
       // ===== CABEÇALHO =====
-      // Fundo laranja
-      doc.setFillColor(...corPrimaria);
-      doc.rect(0, 0, pageWidth, 35, 'F');
+      // Fundo laranja do topo
+      doc.setFillColor(164, 79, 28);
+      doc.rect(0, 0, pageWidth, 40, 'F');
 
-      // Logo/Título
+      // Título em branco
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(28);
+      doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      doc.text('🍲 Panelada da Ana', pageWidth / 2, 15, { align: 'center' });
+      doc.text('🍲 PANELADA DA ANA', pageWidth / 2, 20, { align: 'center' });
       
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text('Relatório Gerencial Detalhado', pageWidth / 2, 25, { align: 'center' });
+      doc.text('Relatório Gerencial', pageWidth / 2, 30, { align: 'center' });
+
+      yPos = 50;
 
       // ===== INFORMAÇÕES DO RELATÓRIO =====
-      let yPos = 45;
+      doc.setFillColor(243, 228, 206);
+      doc.roundedRect(15, yPos, pageWidth - 30, 30, 3, 3, 'F');
       
-      // Box de informações
-      doc.setFillColor(...corCrema);
-      doc.roundedRect(15, yPos, pageWidth - 30, 35, 3, 3, 'F');
-      
-      doc.setTextColor(...corSecundaria);
-      doc.setFontSize(10);
+      doc.setTextColor(106, 58, 26);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       
-      yPos += 8;
-      doc.text('Tipo:', 20, yPos);
-      doc.setFont('helvetica', 'normal');
+      yPos += 10;
       const tipoTexto = relatorioTipo === 'completo' ? 'Relatório Completo' :
         relatorioTipo === 'vendas' ? 'Relatório de Vendas' :
         relatorioTipo === 'produtos' ? 'Produtos Mais Vendidos' :
         relatorioTipo === 'garcons' ? 'Performance dos Garçons' : 'Uso de Mesas';
-      doc.text(tipoTexto, 40, yPos);
+      
+      doc.text('TIPO: ', 20, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(tipoTexto, 35, yPos);
 
-      yPos += 7;
+      yPos += 6;
       doc.setFont('helvetica', 'bold');
-      doc.text('Período:', 20, yPos);
+      doc.text('PERÍODO: ', 20, yPos);
       doc.setFont('helvetica', 'normal');
       const periodoTexto = dataInicio && dataFim
         ? `${new Date(dataInicio).toLocaleDateString('pt-BR')} até ${new Date(dataFim).toLocaleDateString('pt-BR')}`
         : 'Todo o período';
-      doc.text(periodoTexto, 40, yPos);
+      doc.text(periodoTexto, 35, yPos);
 
-      yPos += 7;
+      yPos += 6;
       doc.setFont('helvetica', 'bold');
-      doc.text('Gerado em:', 20, yPos);
+      doc.text('GERADO: ', 20, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(new Date().toLocaleString('pt-BR'), 40, yPos);
-
-      yPos += 7;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Total de registros:', 20, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(dados.totalRegistros?.toString() || '0', 40, yPos);
-
-      // ===== RESUMO EXECUTIVO =====
-      yPos += 20;
-      doc.setFillColor(...corPrimaria);
-      doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('📊 Resumo Executivo', 20, yPos + 2);
+      doc.text(new Date().toLocaleString('pt-BR'), 35, yPos);
 
       yPos += 15;
-      doc.setTextColor(...corSecundaria);
-      doc.setFontSize(10);
+
+      // ===== RESUMO EXECUTIVO =====
+      doc.setFillColor(164, 79, 28);
+      doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('📊 RESUMO GERAL', 20, yPos + 5);
+
+      yPos += 15;
+
+      // Box de estatísticas
+      doc.setDrawColor(164, 79, 28);
+      doc.setLineWidth(0.5);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(15, yPos, pageWidth - 30, 45, 2, 2, 'FD');
+
+      doc.setTextColor(106, 58, 26);
+      doc.setFontSize(9);
+      
+      yPos += 8;
       doc.setFont('helvetica', 'normal');
+      doc.text('Total de Pedidos:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text((dados.totalPedidos || 0).toString(), 70, yPos);
 
-      // Grid de estatísticas
-      const stats = [
-        { label: 'Total de Pedidos', valor: dados.totalPedidos || 0 },
-        { label: 'Pedidos Fechados', valor: dados.pedidosFechados || 0 },
-        { label: 'Pedidos Abertos', valor: dados.pedidosAbertos || 0 },
-        { label: 'Total em Vendas', valor: `R$ ${(dados.totalVendas || 0).toFixed(2).replace('.', ',')}`, destaque: true },
-        { label: 'Ticket Médio', valor: `R$ ${(dados.ticketMedio || 0).toFixed(2).replace('.', ',')}` },
-        { label: 'Itens Vendidos', valor: dados.totalItens || 0 },
-      ];
+      yPos += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Pedidos Fechados:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text((dados.pedidosFechados || 0).toString(), 70, yPos);
 
-      let col = 0;
-      stats.forEach((stat, index) => {
-        const xPos = 20 + (col * 90);
-        
-        if (stat.destaque) {
-          doc.setFillColor(34, 197, 94); // Verde
-          doc.roundedRect(xPos - 2, yPos - 2, 85, 12, 2, 2, 'F');
-          doc.setTextColor(255, 255, 255);
-          doc.setFont('helvetica', 'bold');
-        } else {
-          doc.setTextColor(...corSecundaria);
-          doc.setFont('helvetica', 'normal');
-        }
+      yPos += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Pedidos Abertos:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text((dados.pedidosAbertos || 0).toString(), 70, yPos);
 
-        doc.setFontSize(8);
-        doc.text(stat.label, xPos, yPos + 2);
+      yPos += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('💰 TOTAL EM VENDAS:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(34, 197, 94);
+      doc.text(`R$ ${(dados.totalVendas || 0).toFixed(2).replace('.', ',')}`, 70, yPos);
+
+      yPos += 8;
+      doc.setTextColor(106, 58, 26);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('Ticket Médio:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`R$ ${(dados.ticketMedio || 0).toFixed(2).replace('.', ',')}`, 70, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total de Itens:', 20, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text((dados.totalItens || 0).toString(), 70, yPos);
+
+      yPos += 15;
+
+      // ===== TABELAS DE DADOS =====
+      if ((relatorioTipo === 'completo' || relatorioTipo === 'vendas') && dados.pedidos && dados.pedidos.length > 0) {
+        // Cabeçalho da seção
+        doc.setFillColor(164, 79, 28);
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+        doc.setTextColor(255, 255, 255);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text(stat.valor.toString(), xPos, yPos + 8);
+        doc.text('📋 DETALHAMENTO DE PEDIDOS', 20, yPos + 5);
 
-        col++;
-        if (col >= 2) {
-          col = 0;
-          yPos += 18;
-        }
-      });
+        yPos += 15;
 
-      if (col !== 0) yPos += 18;
-
-      // ===== TABELA DE DADOS =====
-      yPos += 10;
-
-      if (relatorioTipo === 'completo' || relatorioTipo === 'vendas') {
-        // Tabela de Pedidos
-        doc.setFillColor(...corPrimaria);
-        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+        // Cabeçalho da tabela
+        doc.setFillColor(106, 58, 26);
+        doc.rect(15, yPos, pageWidth - 30, 7, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('📋 Detalhamento de Pedidos', 20, yPos + 2);
+        doc.text('ID', 20, yPos + 5);
+        doc.text('MESA', 35, yPos + 5);
+        doc.text('GARÇOM', 70, yPos + 5);
+        doc.text('STATUS', 120, yPos + 5);
+        doc.text('TOTAL', 150, yPos + 5);
+        doc.text('DATA', 175, yPos + 5);
 
-        yPos += 12;
+        yPos += 7;
 
-        const pedidosData = dados.pedidos?.slice(0, 30).map((p: any) => [
-          `#${p.id}`,
-          p.mesa,
-          p.garcom,
-          p.status === 'aberto' ? '🟢 Aberto' : '✅ Fechado',
-          `R$ ${p.total.toFixed(2).replace('.', ',')}`,
-          new Date(p.data).toLocaleDateString('pt-BR'),
-        ]) || [];
+        // Linhas da tabela
+        dados.pedidos.slice(0, 20).forEach((pedido: any, index: number) => {
+          if (yPos > pageHeight - 30) {
+            doc.addPage();
+            yPos = 20;
+          }
 
-        autoTable(doc, {
-          startY: yPos,
-          head: [['ID', 'Mesa', 'Garçom', 'Status', 'Total', 'Data']],
-          body: pedidosData,
-          theme: 'grid',
-          headStyles: {
-            fillColor: corSecundaria,
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'center',
-          },
-          bodyStyles: {
-            textColor: [50, 50, 50],
-          },
-          alternateRowStyles: {
-            fillColor: [250, 245, 235],
-          },
-          columnStyles: {
-            0: { cellWidth: 20, halign: 'center' },
-            1: { cellWidth: 30 },
-            2: { cellWidth: 40 },
-            3: { cellWidth: 30, halign: 'center' },
-            4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
-            5: { cellWidth: 30, halign: 'center' },
-          },
+          // Fundo alternado
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 245, 235);
+            doc.rect(15, yPos, pageWidth - 30, 6, 'F');
+          }
+
+          doc.setTextColor(50, 50, 50);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`#${pedido.id}`, 20, yPos + 4);
+          doc.text(pedido.mesa.substring(0, 15), 35, yPos + 4);
+          doc.text(pedido.garcom.substring(0, 20), 70, yPos + 4);
+          doc.text(pedido.status === 'aberto' ? 'ABERTO' : 'FECHADO', 120, yPos + 4);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(34, 197, 94);
+          doc.text(`R$ ${pedido.total.toFixed(2).replace('.', ',')}`, 150, yPos + 4);
+          doc.setTextColor(50, 50, 50);
+          doc.setFont('helvetica', 'normal');
+          doc.text(new Date(pedido.data).toLocaleDateString('pt-BR'), 175, yPos + 4);
+
+          yPos += 6;
         });
 
-        yPos = (doc as any).lastAutoTable.finalY + 10;
+        yPos += 5;
       }
 
-      if (relatorioTipo === 'produtos') {
-        // Tabela de Produtos
-        doc.setFillColor(...corPrimaria);
-        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+      if (relatorioTipo === 'produtos' && dados.produtos && dados.produtos.length > 0) {
+        // Cabeçalho da seção
+        doc.setFillColor(164, 79, 28);
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('🏆 Ranking de Produtos', 20, yPos + 2);
+        doc.text('🏆 RANKING DE PRODUTOS', 20, yPos + 5);
 
-        yPos += 12;
+        yPos += 15;
 
-        const produtosData = dados.produtos?.map((p: any, index: number) => [
-          `${index + 1}º`,
-          p.nome,
-          p.quantidade,
-          `R$ ${p.total.toFixed(2).replace('.', ',')}`,
-          `R$ ${p.precoMedio.toFixed(2).replace('.', ',')}`,
-        ]) || [];
+        // Cabeçalho da tabela
+        doc.setFillColor(106, 58, 26);
+        doc.rect(15, yPos, pageWidth - 30, 7, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('#', 20, yPos + 5);
+        doc.text('PRODUTO', 30, yPos + 5);
+        doc.text('QTD', 120, yPos + 5);
+        doc.text('TOTAL', 145, yPos + 5);
+        doc.text('PREÇO MÉDIO', 175, yPos + 5);
 
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Pos.', 'Produto', 'Qtd', 'Total', 'Preço Médio']],
-          body: produtosData,
-          theme: 'striped',
-          headStyles: {
-            fillColor: corSecundaria,
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-          },
-          bodyStyles: {
-            textColor: [50, 50, 50],
-          },
-          alternateRowStyles: {
-            fillColor: [250, 245, 235],
-          },
-          columnStyles: {
-            0: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 70 },
-            2: { cellWidth: 25, halign: 'center' },
-            3: { cellWidth: 35, halign: 'right', fontStyle: 'bold', textColor: [34, 197, 94] },
-            4: { cellWidth: 35, halign: 'right' },
-          },
+        yPos += 7;
+
+        // Linhas da tabela
+        dados.produtos.slice(0, 25).forEach((produto: any, index: number) => {
+          if (yPos > pageHeight - 30) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          // Fundo alternado
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 245, 235);
+            doc.rect(15, yPos, pageWidth - 30, 6, 'F');
+          }
+
+          doc.setTextColor(50, 50, 50);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${index + 1}º`, 20, yPos + 4);
+          doc.setFont('helvetica', 'normal');
+          doc.text(produto.nome.substring(0, 35), 30, yPos + 4);
+          doc.text(produto.quantidade.toString(), 120, yPos + 4);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(34, 197, 94);
+          doc.text(`R$ ${produto.total.toFixed(2).replace('.', ',')}`, 145, yPos + 4);
+          doc.setTextColor(50, 50, 50);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`R$ ${produto.precoMedio.toFixed(2).replace('.', ',')}`, 175, yPos + 4);
+
+          yPos += 6;
         });
+
+        yPos += 5;
       }
 
-      if (relatorioTipo === 'garcons') {
-        // Tabela de Garçons
-        doc.setFillColor(...corPrimaria);
-        doc.rect(15, yPos - 5, pageWidth - 30, 10, 'F');
+      if (relatorioTipo === 'garcons' && dados.garcons && dados.garcons.length > 0) {
+        // Cabeçalho da seção
+        doc.setFillColor(164, 79, 28);
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('👨‍🍳 Performance dos Garçons', 20, yPos + 2);
+        doc.text('👨‍🍳 PERFORMANCE DOS GARÇONS', 20, yPos + 5);
 
-        yPos += 12;
+        yPos += 15;
 
-        const garconsData = dados.garcons?.map((g: any, index: number) => [
-          `${index + 1}º`,
-          g.nome,
-          g.pedidos,
-          `R$ ${g.total.toFixed(2).replace('.', ',')}`,
-          `R$ ${g.ticketMedio.toFixed(2).replace('.', ',')}`,
-        ]) || [];
+        // Cabeçalho da tabela
+        doc.setFillColor(106, 58, 26);
+        doc.rect(15, yPos, pageWidth - 30, 7, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('#', 20, yPos + 5);
+        doc.text('GARÇOM', 30, yPos + 5);
+        doc.text('PEDIDOS', 110, yPos + 5);
+        doc.text('TOTAL VENDAS', 145, yPos + 5);
+        doc.text('TICKET MÉDIO', 175, yPos + 5);
 
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Pos.', 'Garçom', 'Pedidos', 'Total Vendas', 'Ticket Médio']],
-          body: garconsData,
-          theme: 'striped',
-          headStyles: {
-            fillColor: corSecundaria,
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-          },
-          bodyStyles: {
-            textColor: [50, 50, 50],
-          },
-          columnStyles: {
-            0: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 60 },
-            2: { cellWidth: 30, halign: 'center' },
-            3: { cellWidth: 40, halign: 'right', fontStyle: 'bold', textColor: [34, 197, 94] },
-            4: { cellWidth: 35, halign: 'right' },
-          },
+        yPos += 7;
+
+        // Linhas da tabela
+        dados.garcons.forEach((garcom: any, index: number) => {
+          if (yPos > pageHeight - 30) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          // Fundo alternado
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 245, 235);
+            doc.rect(15, yPos, pageWidth - 30, 6, 'F');
+          }
+
+          doc.setTextColor(50, 50, 50);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${index + 1}º`, 20, yPos + 4);
+          doc.setFont('helvetica', 'normal');
+          doc.text(garcom.nome.substring(0, 30), 30, yPos + 4);
+          doc.text(garcom.pedidos.toString(), 110, yPos + 4);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(34, 197, 94);
+          doc.text(`R$ ${garcom.total.toFixed(2).replace('.', ',')}`, 145, yPos + 4);
+          doc.setTextColor(50, 50, 50);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`R$ ${garcom.ticketMedio.toFixed(2).replace('.', ',')}`, 175, yPos + 4);
+
+          yPos += 6;
         });
       }
 
@@ -314,12 +352,13 @@ export default function ConfiguracoesPage() {
       const totalPages = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        doc.setFillColor(...corSecundaria);
-        doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
+        doc.setFillColor(106, 58, 26);
+        doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
         doc.text(
-          `Panelada da Ana © ${new Date().getFullYear()} • Relatório confidencial • Página ${i} de ${totalPages}`,
+          `Panelada da Ana © ${new Date().getFullYear()} • Relatório Confidencial • Página ${i} de ${totalPages}`,
           pageWidth / 2,
           pageHeight - 6,
           { align: 'center' }
@@ -327,12 +366,13 @@ export default function ConfiguracoesPage() {
       }
 
       // Salvar PDF
-      doc.save(`relatorio-${relatorioTipo}-${new Date().toISOString().split('T')[0]}.pdf`);
-      alert('Relatório PDF gerado com sucesso!');
+      const nomeArquivo = `relatorio-${relatorioTipo}-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(nomeArquivo);
+      alert('✅ Relatório PDF gerado com sucesso!');
 
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao gerar relatório: ' + (error as Error).message);
+      alert('❌ Erro ao gerar relatório: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
