@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Plus, Minus, Trash2, DollarSign, Search, X, ShoppingCart, Check } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface Prato {
   id: number;
@@ -333,7 +334,7 @@ export default function MesaPage() {
                             </p>
                           )}
                           <p className="text-xl font-bold text-green-600 mt-2">
-                            R$ {Number(prato.preco).toFixed(2)}
+                            {formatCurrency(Number(prato.preco))}
                           </p>
                         </div>
                         
@@ -403,7 +404,7 @@ export default function MesaPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{item.prato.nome}</p>
                             <p className="text-xs text-green-600 font-bold">
-                              R$ {(Number(item.prato.preco) * item.quantidade).toFixed(2)}
+                              {formatCurrency(Number(item.prato.preco) * item.quantidade)}
                             </p>
                           </div>
                           <button
@@ -427,7 +428,7 @@ export default function MesaPage() {
                           <ShoppingCart className="h-3 w-3" />
                           {qtdItensCarrinho} {qtdItensCarrinho === 1 ? 'item' : 'itens'}
                         </p>
-                        <p className="text-2xl font-bold">R$ {totalCarrinho.toFixed(2)}</p>
+                        <p className="text-2xl font-bold">{formatCurrency(totalCarrinho)}</p>
                       </div>
                       
                       <Button
@@ -484,7 +485,7 @@ export default function MesaPage() {
                           </p>
                         )}
                         <p className="text-lg font-bold text-green-600 mt-1">
-                          R$ {Number(item.subtotal).toFixed(2)}
+                          {formatCurrency(Number(item.subtotal))}
                         </p>
                       </div>
                       <button
@@ -528,7 +529,7 @@ export default function MesaPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="text-white flex-1">
                 <p className="text-xs opacity-80">Total</p>
-                <p className="text-2xl font-bold">R$ {Number(pedido.total).toFixed(2)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(Number(pedido.total))}</p>
               </div>
               
               <Button

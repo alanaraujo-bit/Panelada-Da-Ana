@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Calendar, ArrowUpDown } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface VendasData {
   hoje: { total: number; pedidos: number };
@@ -69,7 +70,7 @@ export default function GarcomVendas() {
                 <div>
                   <p className="text-sm opacity-90 mb-1">Hoje</p>
                   <h2 className="text-3xl font-bold">
-                    R$ {Number(data.hoje.total).toFixed(2)}
+                    {formatCurrency(Number(data.hoje.total))}
                   </h2>
                   <p className="text-sm opacity-90 mt-1">
                     {data.hoje.pedidos} pedido{data.hoje.pedidos !== 1 ? 's' : ''}
@@ -88,7 +89,7 @@ export default function GarcomVendas() {
                   <p className="text-xs text-gray-500 font-medium">Esta Semana</p>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  R$ {Number(data.semana.total).toFixed(0)}
+                  {formatCurrency(Number(data.semana.total))}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {data.semana.pedidos} pedidos
@@ -103,7 +104,7 @@ export default function GarcomVendas() {
                   <p className="text-xs text-gray-500 font-medium">Este Mês</p>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  R$ {Number(data.mes.total).toFixed(0)}
+                  {formatCurrency(Number(data.mes.total))}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {data.mes.pedidos} pedidos
@@ -168,7 +169,7 @@ export default function GarcomVendas() {
                       </p>
                     </div>
                     <p className="text-lg font-bold text-green-600">
-                      R$ {Number(item.total).toFixed(2)}
+                      {formatCurrency(Number(item.total))}
                     </p>
                   </div>
                 );

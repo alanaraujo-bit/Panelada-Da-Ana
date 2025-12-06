@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, ShoppingBag, TrendingUp, Clock, Star } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface DashboardData {
   vendasHoje: number;

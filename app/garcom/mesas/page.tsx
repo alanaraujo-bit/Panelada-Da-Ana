@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface Mesa {
   id: number;
