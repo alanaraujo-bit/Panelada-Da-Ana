@@ -418,50 +418,36 @@ export default function MesaPage() {
                   </div>
                 )}
 
-                {/* Botão de Confirmar */}
-                <div className="p-5 bg-gradient-to-r from-green-500 to-green-600 text-white">
-                  <div className="max-w-lg mx-auto space-y-4">
-                    {/* Resumo Rápido */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <ShoppingCart className="h-6 w-6" />
-                        <span className="font-medium">
+                {/* Botão de Confirmar - Compacto */}
+                <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-r from-green-600 to-green-700 shadow-2xl z-30">
+                  <div className="max-w-lg mx-auto px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white flex-1">
+                        <p className="text-xs opacity-80 flex items-center gap-1">
+                          <ShoppingCart className="h-3 w-3" />
                           {qtdItensCarrinho} {qtdItensCarrinho === 1 ? 'item' : 'itens'}
-                        </span>
-                      </div>
-                      <div className="text-right">
+                        </p>
                         <p className="text-2xl font-bold">R$ {totalCarrinho.toFixed(2)}</p>
                       </div>
-                    </div>
-
-                    {/* Botão Grande de Confirmar */}
-                    <Button
-                      onClick={confirmarCarrinho}
-                      disabled={salvando}
-                      className="w-full h-16 bg-white text-green-700 hover:bg-gray-100 font-bold text-xl shadow-lg border-4 border-white"
-                    >
-                      {salvando ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-700 mr-3"></div>
-                          <span>Adicionando...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <Check className="mr-3 h-8 w-8" />
-                          <span>CONFIRMAR PEDIDO</span>
-                        </div>
-                      )}
-                    </Button>
-
-                    {/* Link para ver detalhes */}
-                    {carrinho.length > 1 && (
-                      <button
-                        onClick={() => setMostrarCarrinho(!mostrarCarrinho)}
-                        className="w-full text-center text-sm opacity-90 hover:opacity-100 underline"
+                      
+                      <Button
+                        onClick={confirmarCarrinho}
+                        disabled={salvando}
+                        className="bg-white text-green-700 hover:bg-gray-100 font-bold px-6 py-6 rounded-xl shadow-lg flex items-center gap-2"
                       >
-                        {mostrarCarrinho ? 'Ocultar detalhes ▼' : 'Ver detalhes dos itens ▲'}
-                      </button>
-                    )}
+                        {salvando ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-700"></div>
+                            <span>Salvando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-5 w-5" />
+                            <span>Confirmar</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
