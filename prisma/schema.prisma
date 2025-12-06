@@ -11,15 +11,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  nome      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  senhaHash String   @db.VarChar(255)
-  role      String   @db.VarChar(50)
-  telefone  String?  @db.VarChar(20)
-  foto      String?  @db.Text
-  criadoEm  DateTime @default(now())
-  pedidos   Pedido[]
+  id              Int      @id @default(autoincrement())
+  nome            String   @db.VarChar(255)
+  email           String   @unique @db.VarChar(255)
+  senhaHash       String   @db.VarChar(255)
+  role            String   @db.VarChar(50)
+  telefone        String?  @db.VarChar(20)
+  foto            String?  @db.Text
+  criadoEm        DateTime @default(now())
+  pedidosAbertos  Pedido[] @relation("PedidosAbertos")
+  pedidosFechados Pedido[] @relation("PedidosFechados")
 
   @@map("users")
 }
@@ -52,7 +53,9 @@ model Pedido {
   mesaId         Int
   mesa           Mesa         @relation(fields: [mesaId], references: [id])
   garcomId       Int
-  garcom         User         @relation(fields: [garcomId], references: [id])
+  garcom         User         @relation("PedidosAbertos", fields: [garcomId], references: [id])
+  fechadoPorId   Int?
+  fechadoPor     User?        @relation("PedidosFechados", fields: [fechadoPorId], references: [id])
   status         String       @default("aberto") @db.VarChar(50)
   total          Decimal      @default(0) @db.Decimal(10, 2)
   formaPagamento String?      @db.VarChar(50)
@@ -63,6 +66,7 @@ model Pedido {
   @@map("pedidos")
   @@index([mesaId])
   @@index([garcomId])
+  @@index([fechadoPorId])
   @@index([status])
 }
 

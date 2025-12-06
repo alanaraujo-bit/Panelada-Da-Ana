@@ -27,7 +27,10 @@ export async function GET(
       include: {
         mesa: true,
         garcom: {
-          select: { nome: true },
+          select: { id: true, nome: true },
+        },
+        fechadoPor: {
+          select: { id: true, nome: true },
         },
         itens: {
           include: {
@@ -74,9 +77,14 @@ export async function PUT(
         data: {
           status: 'fechado',
           formaPagamento: body.formaPagamento,
+          fechadoPorId: payload.userId,
           finalizadoEm: new Date(),
         },
-        include: { mesa: true },
+        include: { 
+          mesa: true,
+          garcom: { select: { id: true, nome: true } },
+          fechadoPor: { select: { id: true, nome: true } },
+        },
       });
 
       // Liberar mesa
