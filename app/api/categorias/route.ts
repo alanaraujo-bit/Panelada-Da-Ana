@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+function authenticate(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  const token = authHeader.substring(7);
+  return verifyToken(token);
+}
+
 // GET - Listar todas as categorias
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +41,7 @@ export async function GET(request: NextRequest) {
 // POST - Criar nova categoria
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyToken(request);
+    const user = authenticate(request);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }

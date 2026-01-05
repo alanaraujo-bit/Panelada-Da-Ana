@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+function authenticate(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  const token = authHeader.substring(7);
+  return verifyToken(token);
+}
+
 // PUT - Atualizar categoria
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await verifyToken(request);
+    const user = authenticate(request);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
@@ -42,7 +51,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await verifyToken(request);
+    const user = authenticate(request);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
