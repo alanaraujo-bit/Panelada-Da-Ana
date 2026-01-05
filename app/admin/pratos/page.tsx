@@ -14,38 +14,107 @@ interface Prato {
   nome: string;
   descricao?: string;
   preco: number;
-  categoria: string;
+  categoriaId: number;
+  categoria: {
+    id: number;
+    nome: string;
+  };
+  ativo: boolean;
+  estoque?: number | null;
+  estoqueMinimo?: number | null;
+}
+
+interface Categoria {
+  id: number;
+  nome: string;
+  ordem: number;
   ativo: boolean;
 }
 
 export default function PratosAdminPage() {
   const { token } = useAuthStore();
   const [pratos, setPratos] = useState<Prato[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showCategoriaForm, setShowCategoriaForm] = useState(false);
   const [editingPrato, setEditingPrato] = useState<Prato | null>(null);
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
     preco: '',
-    categoria: '',
+    categoriaId: '',
     ativo: true,
+    controlarEstoque: false,
+    estoque: '',
+    estoqueMinimo: '',
   });
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   const [loading, setLoading] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState('Todas');
 
   useEffect(() => {
     fetchPratos();
+    fetchCategorias();
   }, []);
+
+  const fetchCategorias = async () => {
+    try {
+      console.log('[fetchCategorias] Iniciando requisição...');
+      const response = await fetch('/api/categorias', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log('[fetchCategorias] Status da resposta:', response.status);
+      console.log('[fetchCategorias] Response OK:', response.ok);
+      
+      const data = await response.json();
+      console.log('[fetchCategorias] Dados recebidos:', data);
+      console.log('[fetchCategorias] Tipo dos dados:', typeof data);
+      console.log('[fetchCategorias] É array?', Array.isArray(data));
+      
+      if (Array.isArray(data)) {
+        setCategorias(data.filter((c: Categoria) => c.ativo));
+      } else {
+        console.error('Resposta de categorias não é um array:', data);
+        setCategorias([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+      setCategorias([]);
+    }
+  };
 
   const fetchPratos = async () => {
     try {
+      console.log('Buscando pratos com token:', token ? 'Presente' : 'Ausente');
       const response = await fetch('/api/pratos', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      console.log('Status da resposta:', response.status);
+      
+      if (!response.ok) {
+        console.error('Erro na resposta:', response.status, response.statusText);
+        const errorData = await response.json();
+        console.error('Dados do erro:', errorData);
+        setPratos([]);
+        return;
+      }
+
       const data = await response.json();
-      setPratos(data);
+      console.log('Dados recebidos:', data);
+      
+      if (Array.isArray(data)) {
+        setPratos(data);
+      } else if (data.error) {
+        console.error('Erro da API:', data.error);
+        setPratos([]);
+      } else {
+        console.error('Resposta inesperada:', data);
+        setPratos([]);
+      }
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro ao buscar pratos:', error);
+      setPratos([]);
     } finally {
       setLoading(false);
     }
@@ -64,28 +133,67 @@ export default function PratosAdminPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
+          nome: formData.nome,
+          descricao: formData.descricao || undefined,
           preco: parseFloat(formData.preco),
+          categoriaId: parseInt(formData.categoriaId),
+          ativo: formData.ativo,
+          estoque: formData.controlarEstoque ? (formData.estoque ? parseInt(formData.estoque) : 0) : null,
+          estoqueMinimo: formData.controlarEstoque ? (formData.estoqueMinimo ? parseInt(formData.estoqueMinimo) : 5) : null,
         }),
       });
 
       setShowForm(false);
       setEditingPrato(null);
-      setFormData({ nome: '', descricao: '', preco: '', categoria: '', ativo: true });
+      setFormData({ nome: '', descricao: '', preco: '', categoriaId: '', ativo: true, controlarEstoque: false, estoque: '', estoqueMinimo: '' });
       fetchPratos();
     } catch (error) {
       console.error('Erro:', error);
     }
   };
 
+  const handleCriarCategoria = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!novaCategoriaNome.trim()) {
+      alert('Digite um nome para a categoria');
+      return;
+    }
+
+    try {
+      await fetch('/api/categorias', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome: novaCategoriaNome,
+          ordem: categorias.length,
+          ativo: true,
+        }),
+      });
+
+      setNovaCategoriaNome('');
+      setShowCategoriaForm(false);
+      await fetchCategorias();
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error);
+      alert('Erro ao criar categoria. Talvez já exista uma com este nome.');
+    }
+  };
+
   const handleEdit = (prato: Prato) => {
     setEditingPrato(prato);
+    const temEstoque = prato.estoque !== null && prato.estoque !== undefined;
     setFormData({
       nome: prato.nome,
       descricao: prato.descricao || '',
       preco: prato.preco.toString(),
-      categoria: prato.categoria,
+      categoriaId: prato.categoriaId.toString(),
       ativo: prato.ativo,
+      controlarEstoque: temEstoque,
+      estoque: prato.estoque?.toString() || '',
+      estoqueMinimo: prato.estoqueMinimo?.toString() || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -115,6 +223,7 @@ export default function PratosAdminPage() {
         },
         body: JSON.stringify({
           ...prato,
+          categoriaId: prato.categoria.id,
           ativo: !prato.ativo,
         }),
       });
@@ -127,13 +236,15 @@ export default function PratosAdminPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingPrato(null);
-    setFormData({ nome: '', descricao: '', preco: '', categoria: '', ativo: true });
+    setFormData({ nome: '', descricao: '', preco: '', categoriaId: '', ativo: true, controlarEstoque: false, estoque: '', estoqueMinimo: '' });
   };
 
-  const categorias = ['Todas', ...Array.from(new Set(pratos.map((p) => p.categoria)))];
-  const pratosFiltrados = filtroCategoria === 'Todas'
-    ? pratos
-    : pratos.filter((p) => p.categoria === filtroCategoria);
+  const categoriasDisponiveis = ['Todas', ...(Array.isArray(categorias) ? categorias.map((c) => c.nome) : [])];
+  const pratosFiltrados = Array.isArray(pratos)
+    ? (filtroCategoria === 'Todas'
+      ? pratos
+      : pratos.filter((p) => p.categoria?.nome === filtroCategoria))
+    : [];
 
   if (loading) {
     return (
@@ -184,16 +295,68 @@ export default function PratosAdminPage() {
                 </div>
                 <div>
                   <Label htmlFor="categoria">Categoria *</Label>
-                  <Input
-                    id="categoria"
-                    value={formData.categoria}
-                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                    placeholder="Ex: Prato Principal, Bebida, Sobremesa"
-                    required
-                    className="mt-1"
-                  />
+                  <div className="flex gap-2 mt-1">
+                    <select
+                      id="categoria"
+                      value={formData.categoriaId}
+                      onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
+                      required
+                      className="flex-1 px-3 py-2 border rounded-md"
+                    >
+                      <option value="">Selecione uma categoria</option>
+                      {categorias.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      onClick={() => setShowCategoriaForm(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
+
+              {showCategoriaForm && (
+                <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+                  <h4 className="font-semibold text-blue-900 mb-3">Nova Categoria</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      value={novaCategoriaNome}
+                      onChange={(e) => setNovaCategoriaNome(e.target.value)}
+                      placeholder="Nome da categoria"
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCriarCategoria();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleCriarCategoria}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      Criar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setShowCategoriaForm(false);
+                        setNovaCategoriaNome('');
+                      }}
+                      variant="outline"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="descricao">Descrição</Label>
@@ -235,6 +398,50 @@ export default function PratosAdminPage() {
                 </div>
               </div>
 
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="controlarEstoque"
+                    checked={formData.controlarEstoque}
+                    onChange={(e) => setFormData({ ...formData, controlarEstoque: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <Label htmlFor="controlarEstoque" className="cursor-pointer">
+                    Controlar Estoque (para bebidas, porções prontas, etc.)
+                  </Label>
+                </div>
+
+                {formData.controlarEstoque && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+                    <div>
+                      <Label htmlFor="estoque">Estoque Atual</Label>
+                      <Input
+                        id="estoque"
+                        type="number"
+                        min="0"
+                        value={formData.estoque}
+                        onChange={(e) => setFormData({ ...formData, estoque: e.target.value })}
+                        placeholder="Quantidade disponível"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="estoqueMinimo">Estoque Mínimo</Label>
+                      <Input
+                        id="estoqueMinimo"
+                        type="number"
+                        min="0"
+                        value={formData.estoqueMinimo}
+                        onChange={(e) => setFormData({ ...formData, estoqueMinimo: e.target.value })}
+                        placeholder="Alerta de estoque baixo (padrão: 5)"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
                   {editingPrato ? 'Salvar Alterações' : 'Criar Prato'}
@@ -255,7 +462,7 @@ export default function PratosAdminPage() {
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap">
-        {categorias.map((cat) => (
+        {categoriasDisponiveis.map((cat) => (
           <button
             key={cat}
             onClick={() => setFiltroCategoria(cat)}
@@ -289,7 +496,7 @@ export default function PratosAdminPage() {
                     <h3 className="text-lg font-bold text-gray-900">{prato.nome}</h3>
                   </div>
                   <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                    {prato.categoria}
+                    {prato.categoria.nome}
                   </span>
                 </div>
                 <button
@@ -309,8 +516,22 @@ export default function PratosAdminPage() {
                 <p className="text-sm text-gray-600 mb-3 line-clamp-2">{prato.descricao}</p>
               )}
 
-              <div className="text-2xl font-bold text-green-600 mb-4">
-                {formatCurrency(Number(prato.preco))}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(Number(prato.preco))}
+                </div>
+                {prato.estoque !== null && prato.estoque !== undefined && (
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                    prato.estoque === 0
+                      ? 'bg-red-100 text-red-700'
+                      : prato.estoque <= (prato.estoqueMinimo || 0)
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-green-100 text-green-700'
+                  }`}>
+                    {prato.estoque === 0 ? '❌ Esgotado' : `📦 ${prato.estoque} un.`}
+                    {prato.estoque > 0 && prato.estoque <= (prato.estoqueMinimo || 0) && ' ⚠️'}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">

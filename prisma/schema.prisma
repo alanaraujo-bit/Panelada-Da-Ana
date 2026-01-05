@@ -35,17 +35,32 @@ model Mesa {
   @@map("mesas")
 }
 
+model Categoria {
+  id       Int      @id @default(autoincrement())
+  nome     String   @unique @db.VarChar(100)
+  ordem    Int      @default(0)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+  pratos   Prato[]
+
+  @@map("categorias")
+}
+
 model Prato {
-  id        Int          @id @default(autoincrement())
-  nome      String       @db.VarChar(255)
-  descricao String?      @db.Text
-  preco     Decimal      @db.Decimal(10, 2)
-  categoria String       @db.VarChar(100)
-  ativo     Boolean      @default(true)
-  criadoEm  DateTime     @default(now())
-  itens     PedidoItem[]
+  id             Int          @id @default(autoincrement())
+  nome           String       @db.VarChar(255)
+  descricao      String?      @db.Text
+  preco          Decimal      @db.Decimal(10, 2)
+  categoriaId    Int
+  categoria      Categoria    @relation(fields: [categoriaId], references: [id])
+  ativo          Boolean      @default(true)
+  estoque        Int?         @default(0)
+  estoqueMinimo  Int?         @default(5)
+  criadoEm       DateTime     @default(now())
+  itens          PedidoItem[]
 
   @@map("pratos")
+  @@index([categoriaId])
 }
 
 model Pedido {

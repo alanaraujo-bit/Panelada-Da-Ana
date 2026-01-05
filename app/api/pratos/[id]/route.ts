@@ -7,8 +7,10 @@ const pratoSchema = z.object({
   nome: z.string().min(1).optional(),
   descricao: z.string().optional(),
   preco: z.number().positive().optional(),
-  categoria: z.string().min(1).optional(),
+  categoriaId: z.number().int().positive().optional(),
   ativo: z.boolean().optional(),
+  estoque: z.number().int().nonnegative().nullable().optional(),
+  estoqueMinimo: z.number().int().nonnegative().nullable().optional(),
 });
 
 async function authenticate(request: NextRequest) {

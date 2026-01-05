@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,18 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
+interface Categoria {
+  id: number;
+  nome: string;
+}
+
 interface Prato {
   id: number;
   nome: string;
   descricao?: string;
   preco: number;
-  categoria: string;
+  categoria: Categoria | null;
+  categoriaId?: number;
 }
 
 interface PedidoItem {
@@ -46,6 +52,29 @@ export default function MesaPage() {
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const categorias: string[] = useMemo(() => {
+    console.log('[MesaPage] Processando categorias dos pratos:', pratos);
+
+    const nomes = pratos
+      .filter((p) => {
+        return (
+          p.categoria !== null &&
+          p.categoria !== undefined &&
+          typeof p.categoria === 'object' &&
+          'nome' in p.categoria &&
+          p.categoria.nome &&
+          typeof p.categoria.nome === 'string'
+        );
+      })
+      .map((p) => String(p.categoria!.nome))
+      .filter((nome) => nome.trim() !== '');
+
+    const uniqueNomes = Array.from(new Set(nomes)).sort();
+    console.log('[MesaPage] Categorias únicas:', uniqueNomes);
+
+    return uniqueNomes;
+  }, [pratos]);
+
   useEffect(() => {
     if (!token) {
       router.push('/login');
@@ -75,6 +104,7 @@ export default function MesaPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
+      console.log('[MesaPage] Pratos recebidos:', data);
       setPratos(data);
     } catch (error) {
       console.error('Erro ao buscar pratos:', error);
@@ -131,8 +161,6 @@ export default function MesaPage() {
       </div>
     );
   }
-
-  const categorias = Array.from(new Set(pratos.map((p) => p.categoria)));
 
   return (
     <div className="min-h-screen bg-primary-cream pb-20">
@@ -221,38 +249,56 @@ export default function MesaPage() {
               <CardTitle>Adicionar Item</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {categorias.map((categoria) => (
-                <div key={categoria}>
-                  <h3 className="font-semibold text-primary-brown mb-2">
-                    {categoria}
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {pratos
-                      .filter((p) => p.categoria === categoria)
-                      .map((prato) => (
-                        <button
-                          key={prato.id}
-                          onClick={() => setSelectedPrato(prato.id)}
-                          className={`p-3 text-left rounded-lg border-2 transition-all ${
-                            selectedPrato === prato.id
-                              ? 'border-primary-orange bg-orange-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <p className="font-semibold">{prato.nome}</p>
-                          {prato.descricao && (
-                            <p className="text-sm text-muted-foreground">
-                              {prato.descricao}
+              {pratos.length === 0 || categorias.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum prato disponível
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {categorias.filter(cat => cat && typeof cat === 'string').map((categoriaNome, index) => {
+                    const pratosDaCategoria = pratos.filter(
+                      (p) => {
+                        if (!p.categoria || typeof p.categoria !== 'object') return false;
+                        const nome = p.categoria.nome;
+                        return typeof nome === 'string' && nome === categoriaNome;
+                      }
+                    );
+                    
+                    if (pratosDaCategoria.length === 0) return null;
+                    
+                    return (
+                      <div key={`categoria-${index}-${categoriaNome}`}>
+                        <h3 className="font-semibold text-primary-brown mb-2">
+                          {categoriaNome}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2">
+                          {pratosDaCategoria.map((prato) => (
+                          <button
+                            key={`prato-${prato.id}`}
+                            onClick={() => setSelectedPrato(prato.id)}
+                            className={`p-3 text-left rounded-lg border-2 transition-all ${
+                              selectedPrato === prato.id
+                                ? 'border-primary-orange bg-orange-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <p className="font-semibold">{prato.nome}</p>
+                            {prato.descricao && (
+                              <p className="text-sm text-muted-foreground">
+                                {prato.descricao}
+                              </p>
+                            )}
+                            <p className="text-sm font-semibold text-primary-orange mt-1">
+                              {formatCurrency(Number(prato.preco))}
                             </p>
-                          )}
-                          <p className="text-sm font-semibold text-primary-orange mt-1">
-                            {formatCurrency(Number(prato.preco))}
-                          </p>
-                        </button>
-                      ))}
-                  </div>
+                          </button>
+                        ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
 
               {selectedPrato && (
                 <>

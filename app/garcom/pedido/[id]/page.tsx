@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,16 @@ interface Prato {
   nome: string;
   descricao?: string;
   preco: number;
-  categoria: string;
+  categoria: { id: number; nome: string } | string | null;
+}
+
+function getCategoriaNome(categoria: Prato['categoria']): string {
+  if (!categoria) return '';
+  if (typeof categoria === 'string') return categoria;
+  if (typeof categoria === 'object' && 'nome' in categoria && typeof categoria.nome === 'string') {
+    return categoria.nome;
+  }
+  return '';
 }
 
 interface ItemCarrinho {
@@ -67,7 +76,7 @@ export default function MesaPage() {
     let filtered = pratos;
     
     if (categoriaFiltro !== 'todas') {
-      filtered = filtered.filter(p => p.categoria === categoriaFiltro);
+      filtered = filtered.filter((p) => getCategoriaNome(p.categoria) === categoriaFiltro);
     }
     
     if (searchTerm) {
@@ -207,6 +216,15 @@ export default function MesaPage() {
     router.push(`/garcom/checkout?pedidoId=${params.id}`);
   };
 
+  const categorias = useMemo(() => {
+    const nomes = pratos
+      .map((p) => getCategoriaNome(p.categoria))
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0);
+
+    return ['todas', ...Array.from(new Set(nomes))];
+  }, [pratos]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -225,8 +243,6 @@ export default function MesaPage() {
       </div>
     );
   }
-
-  const categorias = ['todas', ...Array.from(new Set(pratos.map(p => p.categoria)))];
   const totalCarrinho = carrinho.reduce((acc, item) => acc + (Number(item.prato.preco) * item.quantidade), 0);
   const qtdItensCarrinho = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
 
@@ -307,7 +323,7 @@ export default function MesaPage() {
                         : 'bg-gray-200 text-gray-700'
                     }`}
                   >
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {cat === 'todas' ? 'Todas' : cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </button>
                 ))}
               </div>

@@ -7,8 +7,10 @@ const pratoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   descricao: z.string().optional(),
   preco: z.number().positive('Preço deve ser positivo'),
-  categoria: z.string().min(1, 'Categoria é obrigatória'),
+  categoriaId: z.number().int().positive('Categoria é obrigatória'),
   ativo: z.boolean().optional(),
+  estoque: z.number().int().nonnegative().nullable().optional(),
+  estoqueMinimo: z.number().int().nonnegative().nullable().optional(),
 });
 
 async function authenticate(request: NextRequest) {
@@ -24,6 +26,7 @@ export async function GET(request: NextRequest) {
   try {
     const payload = await authenticate(request);
     if (!payload) {
+      console.log('Autenticação falhou na API de pratos');
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
@@ -32,9 +35,13 @@ export async function GET(request: NextRequest) {
 
     const pratos = await prisma.prato.findMany({
       where: apenasAtivos ? { ativo: true } : undefined,
-      orderBy: [{ categoria: 'asc' }, { nome: 'asc' }],
+      include: {
+        categoria: true,
+      },
+      orderBy: [{ categoria: { nome: 'asc' } }, { nome: 'asc' }],
     });
 
+    console.log(`Retornando ${pratos.length} pratos`);
     return NextResponse.json(pratos);
   } catch (error) {
     console.error('Error fetching pratos:', error);

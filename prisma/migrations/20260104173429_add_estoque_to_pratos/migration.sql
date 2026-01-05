@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `pratos` ADD COLUMN `estoque` INTEGER NULL DEFAULT 0,
+    ADD COLUMN `estoqueMinimo` INTEGER NULL DEFAULT 5;
