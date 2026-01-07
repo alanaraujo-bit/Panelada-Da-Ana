@@ -54,11 +54,19 @@ interface User {
   role: string;
 }
 
+interface RememberedAuth {
+  user: User;
+  token: string;
+  lastUsedAt: number;
+}
+
 interface AuthStore {
   user: User | null;
   token: string | null;
+  remembered: RememberedAuth[];
   setAuth: (user: User, token: string) => void;
   logout: () => void;
+  removeRemembered: (email: string) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -66,13 +74,46 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       token: null,
-      setAuth: (user, token) => set({ user, token }),
+      remembered: [],
+      setAuth: (user, token) =>
+        set((state) => {
+          const now = Date.now();
+          const remembered = (state.remembered || []).filter(
+            (entry) => entry.user.email !== user.email
+          );
+
+          return {
+            user,
+            token,
+            remembered: [{ user, token, lastUsedAt: now }, ...remembered],
+          };
+        }),
       logout: () => set({ user: null, token: null }),
+      removeRemembered: (email) =>
+        set((state) => ({
+          remembered: (state.remembered || []).filter(
+            (entry) => entry.user.email !== email
+          ),
+        })),
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => safeStorage),
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      version: 2,
+      migrate: (persistedState: unknown) => {
+        if (persistedState && typeof persistedState === 'object') {
+          const state = persistedState as Record<string, unknown>;
+          const remembered = Array.isArray(state.remembered) ? state.remembered : [];
+          return { ...state, remembered } as unknown as AuthStore;
+        }
+
+        return persistedState as unknown as AuthStore;
+      },
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        remembered: state.remembered,
+      }),
     }
   )
 );
