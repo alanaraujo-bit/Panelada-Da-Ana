@@ -10,7 +10,7 @@ const pagamentoSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -25,7 +25,8 @@ export async function POST(
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
-    const pedidoId = parseInt(params.id);
+    const { id } = await params;
+    const pedidoId = parseInt(id);
     const body = await request.json();
     const validation = pagamentoSchema.safeParse(body);
 
