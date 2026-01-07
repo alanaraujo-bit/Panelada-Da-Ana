@@ -11,16 +11,17 @@ datasource db {
 }
 
 model User {
-  id              Int      @id @default(autoincrement())
-  nome            String   @db.VarChar(255)
-  email           String   @unique @db.VarChar(255)
-  senhaHash       String   @db.VarChar(255)
-  role            String   @db.VarChar(50)
-  telefone        String?  @db.VarChar(20)
-  foto            String?  @db.Text
-  criadoEm        DateTime @default(now())
-  pedidosAbertos  Pedido[] @relation("PedidosAbertos")
-  pedidosFechados Pedido[] @relation("PedidosFechados")
+  id              Int         @id @default(autoincrement())
+  nome            String      @db.VarChar(255)
+  email           String      @unique @db.VarChar(255)
+  senhaHash       String      @db.VarChar(255)
+  role            String      @db.VarChar(50)
+  telefone        String?     @db.VarChar(20)
+  foto            String?     @db.Text
+  criadoEm        DateTime    @default(now())
+  pedidosAbertos  Pedido[]    @relation("PedidosAbertos")
+  pedidosFechados Pedido[]    @relation("PedidosFechados")
+  pagamentos      Pagamento[]
 
   @@map("users")
 }
@@ -73,16 +74,33 @@ model Pedido {
   fechadoPor     User?        @relation("PedidosFechados", fields: [fechadoPorId], references: [id])
   status         String       @default("aberto") @db.VarChar(50)
   total          Decimal      @default(0) @db.Decimal(10, 2)
+  totalPago      Decimal      @default(0) @db.Decimal(10, 2)
   formaPagamento String?      @db.VarChar(50)
   criadoEm       DateTime     @default(now())
   finalizadoEm   DateTime?
   itens          PedidoItem[]
+  pagamentos     Pagamento[]
 
   @@map("pedidos")
   @@index([mesaId])
   @@index([garcomId])
   @@index([fechadoPorId])
   @@index([status])
+}
+
+model Pagamento {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  valor          Decimal  @db.Decimal(10, 2)
+  formaPagamento String   @db.VarChar(50)
+  registradoPorId Int
+  registradoPor  User     @relation(fields: [registradoPorId], references: [id])
+  criadoEm       DateTime @default(now())
+
+  @@map("pagamentos")
+  @@index([pedidoId])
+  @@index([registradoPorId])
 }
 
 model PedidoItem {

@@ -22,6 +22,9 @@ export async function GET(
     }
 
     const { id } = await params;
+    const url = new URL(request.url);
+    const includePagamentos = url.searchParams.get('include')?.includes('pagamentos');
+
     const pedido = await prisma.pedido.findUnique({
       where: { id: parseInt(id) },
       include: {
@@ -29,14 +32,23 @@ export async function GET(
         garcom: {
           select: { id: true, nome: true },
         },
-        // fechadoPor: {
-        //   select: { id: true, nome: true },
-        // },
         itens: {
           include: {
             prato: true,
           },
         },
+        ...(includePagamentos && {
+          pagamentos: {
+            include: {
+              registradoPor: {
+                select: { id: true, nome: true, email: true },
+              },
+            },
+            orderBy: {
+              criadoEm: 'desc',
+            },
+          },
+        }),
       },
     });
 
