@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Aguardar hidratação do Zustand
   useEffect(() => {
@@ -238,17 +239,31 @@ export default function LoginPage() {
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
                     <Label htmlFor="senha" className="text-sm">Senha</Label>
-                    <Input
-                      id="senha"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={senha}
-                      onChange={(e) => setSenha(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                      className="h-11 sm:h-12 text-sm sm:text-base"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="senha"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={senha}
+                        onChange={(e) => setSenha(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        className="h-11 sm:h-12 text-sm sm:text-base pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-brown/60 hover:text-primary-brown transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                        ) : (
+                          <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   {error && (
                     <div className="p-2.5 sm:p-3 text-xs sm:text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
